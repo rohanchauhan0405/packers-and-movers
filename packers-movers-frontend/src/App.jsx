@@ -1,4 +1,3 @@
-
 // Import React Router components
 import { Routes, Route } from "react-router-dom";
 
@@ -14,10 +13,12 @@ import Registration from "./pages/public/Registration";
 import RequestQuote from "./pages/public/RequestQuote";
 import Search from "./pages/public/Search";
 
-// Import authentication page
+// Import authentication pages
 import Login from "./pages/auth/Login";
+import AdminLogin from "./pages/auth/AdminLogin";
 
-// Import admin page
+// Import admin pages
+import AdminHome from "./pages/admin/AdminHome";
 import Bookings from "./pages/admin/Bookings";
 
 
@@ -30,25 +31,76 @@ function App() {
       {/* Application Routes */}
       <Routes>
 
-        {/* Public pages */}
-        <Route path="/" element={<Index />} />
+        {/* ================= PUBLIC PAGES ================= */}
 
-        <Route path="/about" element={<About />} />
+        {/* Home */}
+        <Route
+          path="/"
+          element={<Index />}
+        />
 
-        <Route path="/services" element={<Services />} />
+        {/* About */}
+        <Route
+          path="/about"
+          element={<About />}
+        />
 
-        <Route path="/contact" element={<Contact />} />
+        {/* Services */}
+        <Route
+          path="/services"
+          element={<Services />}
+        />
 
-        <Route path="/registration" element={<Registration />} />
+        {/* Contact */}
+        <Route
+          path="/contact"
+          element={<Contact />}
+        />
 
-        <Route path="/login" element={<Login />} />
+        {/* Registration */}
+        <Route
+          path="/registration"
+          element={<Registration />}
+        />
 
-        <Route path="/request-quote" element={<RequestQuote />} />
+        {/* User Login */}
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
-        <Route path="/search" element={<Search />} />
+        {/* Request Quote */}
+        <Route
+          path="/request-quote"
+          element={<RequestQuote />}
+        />
 
-        {/* Admin bookings page */}
-        <Route path="/admin/bookings" element={<Bookings />} />
+        {/* Search */}
+        <Route
+          path="/search"
+          element={<Search />}
+        />
+
+
+        {/* ================= ADMIN PAGES ================= */}
+
+        {/* Admin Login */}
+        <Route
+          path="/admin-login"
+          element={<AdminLogin />}
+        />
+
+        {/* Admin Dashboard */}
+        <Route
+          path="/admin"
+          element={<AdminHome />}
+        />
+
+        {/* Admin Bookings */}
+        <Route
+          path="/admin/bookings"
+          element={<Bookings />}
+        />
 
       </Routes>
     </>

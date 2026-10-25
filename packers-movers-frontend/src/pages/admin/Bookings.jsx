@@ -1,4 +1,3 @@
-
 // Import React hooks
 import { useEffect, useState } from "react";
 
@@ -14,7 +13,7 @@ function Bookings() {
   const [selectedBooking, setSelectedBooking] = useState(null);
 
 
-  // Get bookings when page opens
+  // Get all bookings
   useEffect(() => {
 
     const token = localStorage.getItem("access_token");
@@ -34,11 +33,52 @@ function Bookings() {
   }, []);
 
 
+  // Update booking status
+  const updateStatus = async (id, statusValue) => {
+
+    const token = localStorage.getItem("access_token");
+
+    try {
+
+      const response = await api.patch(
+        `booking/${id}/`,
+        { status: statusValue },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update booking in React
+      setBookings(
+        bookings.map((booking) =>
+          booking.id === id ? response.data : booking
+        )
+      );
+
+      // Update selected booking if open
+      if (selectedBooking?.id === id) {
+        setSelectedBooking(response.data);
+      }
+
+    } catch (error) {
+
+      console.log(
+        "Status Update Error:",
+        error.response?.data
+      );
+
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 pt-28 pb-16">
 
       {/* Heading */}
       <div className="max-w-6xl mx-auto mb-8">
+
         <p className="text-orange-500 font-semibold">
           ADMIN
         </p>
@@ -46,6 +86,7 @@ function Bookings() {
         <h1 className="text-3xl font-bold text-gray-900">
           Booking Requests
         </h1>
+
       </div>
 
 
@@ -63,6 +104,7 @@ function Bookings() {
 
               {/* Customer */}
               <div>
+
                 <p className="text-sm text-gray-500">
                   Customer
                 </p>
@@ -78,11 +120,13 @@ function Bookings() {
                 <p className="text-sm text-gray-600">
                   {booking.mobile}
                 </p>
+
               </div>
 
 
               {/* Moving details */}
               <div>
+
                 <p className="text-sm text-gray-500">
                   Moving
                 </p>
@@ -94,22 +138,47 @@ function Bookings() {
                 <p className="text-sm text-gray-600">
                   {booking.shiftingdate}
                 </p>
+
               </div>
 
 
               {/* Status */}
               <div>
-                <p className="text-sm text-gray-500">
+
+                <p className="text-sm text-gray-500 mb-1">
                   Status
                 </p>
 
-                <span className="inline-block mt-1 px-3 py-1 rounded-full bg-orange-100 text-orange-600 text-sm">
-                  {booking.status || "Pending"}
-                </span>
+                <select
+                  value={booking.status || "Pending"}
+                  onChange={(e) =>
+                    updateStatus(booking.id, e.target.value)
+                  }
+                  className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-orange-500"
+                >
+
+                  <option value="Pending">
+                    Pending
+                  </option>
+
+                  <option value="Confirmed">
+                    Confirmed
+                  </option>
+
+                  <option value="Completed">
+                    Completed
+                  </option>
+
+                  <option value="Cancelled">
+                    Cancelled
+                  </option>
+
+                </select>
+
               </div>
 
 
-              {/* View button */}
+              {/* View details */}
               <div className="flex items-center md:justify-end">
 
                 <button
@@ -138,15 +207,15 @@ function Bookings() {
       </div>
 
 
-      {/* Booking Details */}
+      {/* Booking details */}
       {selectedBooking && (
 
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
 
           <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
 
-            {/* Details header */}
-            <div className="flex items-center justify-between mb-6">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
 
               <h2 className="text-2xl font-bold">
                 Booking Details
@@ -154,7 +223,7 @@ function Bookings() {
 
               <button
                 onClick={() => setSelectedBooking(null)}
-                className="text-gray-500 text-2xl hover:text-black"
+                className="text-2xl text-gray-500 hover:text-black"
               >
                 ×
               </button>
@@ -162,7 +231,7 @@ function Bookings() {
             </div>
 
 
-            {/* Details */}
+            {/* Booking information */}
             <div className="grid gap-4 md:grid-cols-2">
 
               <p>
@@ -178,48 +247,36 @@ function Bookings() {
               </p>
 
               <p>
-                <strong>Service:</strong>{" "}
-                {selectedBooking.service}
+                <strong>From:</strong> {selectedBooking.location}
               </p>
 
               <p>
-                <strong>From:</strong>{" "}
-                {selectedBooking.location}
+                <strong>To:</strong> {selectedBooking.shiftingloc}
               </p>
 
               <p>
-                <strong>To:</strong>{" "}
-                {selectedBooking.shiftingloc}
+                <strong>Date:</strong> {selectedBooking.shiftingdate}
               </p>
 
               <p>
-                <strong>Shifting Date:</strong>{" "}
-                {selectedBooking.shiftingdate}
+                <strong>Service:</strong> {selectedBooking.service}
               </p>
 
               <p>
-                <strong>Brief Items:</strong>{" "}
-                {selectedBooking.briefitems}
+                <strong>Status:</strong> {selectedBooking.status}
               </p>
 
               <p>
-                <strong>Total Amount:</strong>{" "}
-                ₹{selectedBooking.total_amount || 0}
+                <strong>Total:</strong> ₹{selectedBooking.total_amount || 0}
               </p>
 
               <p>
-                <strong>Advance Paid:</strong>{" "}
-                ₹{selectedBooking.advance_paid || 0}
+                <strong>Advance:</strong> ₹{selectedBooking.advance_paid || 0}
               </p>
 
               <p>
-                <strong>Payment Status:</strong>{" "}
+                <strong>Payment:</strong>{" "}
                 {selectedBooking.payment_status || "Pending"}
-              </p>
-
-              <p>
-                <strong>Booking Status:</strong>{" "}
-                {selectedBooking.status || "Pending"}
               </p>
 
             </div>
@@ -229,7 +286,7 @@ function Bookings() {
             <div className="mt-5">
 
               <p className="font-semibold">
-                Item Details
+                Items
               </p>
 
               <p className="text-gray-600 mt-1">

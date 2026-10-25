@@ -30,150 +30,257 @@ from .serializers import (
 
 # ================= SERVICES =================
 
-
 # API for Services
 class ServicesView(APIView):
-    # GET method - get all services
+
+    # GET - get all services
     def get(self, request):
 
-        # Get all services from the database
+        # Get all services from database
         services = Services.objects.all()
 
-        # Convert Django objects into JSON
+        # Convert objects into JSON
         serializer = ServicesSerializer(services, many=True)
 
-        # Send the data as a response
+        # Return services
         return Response(serializer.data)
 
 
 # ================= SITE USER / BOOKING =================
 
-
-# API for SiteUser
-# ================= SITE USER / BOOKING =================
-
-
-# API for SiteUser
+# API for bookings
 class SiteUserView(APIView):
-    # Only logged-in users can access this API
+
+    # Require login for all booking methods
     permission_classes = [IsAuthenticated]
 
-    # GET method - get all bookings
+    # GET - get all bookings (admin only)
     def get(self, request):
 
-        # Get all bookings from the database
+        # Check whether user is an admin/staff member
+        if not request.user.is_staff:
+            return Response(
+                {"detail": "Admin access required."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get all bookings
         bookings = SiteUser.objects.all()
 
-        # Convert Django objects into JSON
+        # Convert bookings into JSON
         serializer = SiteUserSerializer(bookings, many=True)
 
-        # Send booking data to React
+        # Return bookings
         return Response(serializer.data)
 
-    # POST method - create a new booking/request
+    # POST - create a booking (logged-in users)
     def post(self, request):
 
-        # Get data sent from React
+        # Get booking data from React
         serializer = SiteUserSerializer(data=request.data)
 
-        # Check whether the data is valid
+        # Validate booking data
         if serializer.is_valid():
-            # Save the valid data into the database
+
+            # Save booking
             serializer.save()
 
-            # Return the saved data
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Return saved booking
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
 
         # Return validation errors
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # PATCH - update a booking (admin only)
+    def patch(self, request, id):
+
+        # Check whether user is an admin/staff member
+        if not request.user.is_staff:
+            return Response(
+                {"detail": "Admin access required."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Find booking using ID
+        try:
+            booking = SiteUser.objects.get(id=id)
+
+        except SiteUser.DoesNotExist:
+            return Response(
+                {"detail": "Booking not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Update only the fields sent from React
+        serializer = SiteUserSerializer(
+            booking,
+            data=request.data,
+            partial=True
+        )
+
+        # Validate updated data
+        if serializer.is_valid():
+
+            # Save changes
+            serializer.save()
+
+            # Return updated booking
+            return Response(serializer.data)
+
+        # Return validation errors
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 # ================= CONTACT =================
 
-
 # API for Contact
 class ContactView(APIView):
-    # POST method - create a contact message
+
+    # POST - create a contact message
+    # This API is public; login is not required
     def post(self, request):
 
-        # Get data sent from React
+        # Get contact data from React
         serializer = ContactSerializer(data=request.data)
 
-        # Check whether the data is valid
+        # Validate data
         if serializer.is_valid():
-            # Save the contact message into the database
+
+            # Save contact message
             serializer.save()
 
-            # Return the saved data
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Return saved data
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
 
         # Return validation errors
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 # ================= REGISTER =================
 
-
 # API for user registration
 class RegisterView(APIView):
-    # POST method - register a new user
+
+    # POST - register a new user
     def post(self, request):
 
-        # Get registration data from React
+        # Get registration data
         serializer = RegisterSerializer(data=request.data)
 
-        # Check whether the data is valid
+        # Validate registration data
         if serializer.is_valid():
-            # Create the user
+
+            # Create user
             serializer.save()
 
-            # Send success response
+            # Return success message
             return Response(
                 {"message": "User registered successfully"},
-                status=status.HTTP_201_CREATED,
+                status=status.HTTP_201_CREATED
             )
 
-        # Send validation errors
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Return validation errors
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
-# ================= LOGIN =================
+# ================= USER LOGIN =================
 
-
-# API for user login
+# API for normal customer login
 class LoginView(APIView):
-    # POST method - login user
+
+    # POST - login user
     def post(self, request):
 
-        # Get username from request
+        # Get username and password
         username = request.data.get("username")
-
-        # Get password from request
         password = request.data.get("password")
 
-        # Check username and password
-        user = authenticate(username=username, password=password)
+        # Verify credentials
+        user = authenticate(
+            username=username,
+            password=password
+        )
 
-        # Check if user exists
+        # Reject invalid credentials
         if user is None:
-            # Return error message
             return Response(
                 {"message": "Invalid username or password"},
-                status=status.HTTP_401_UNAUTHORIZED,
+                status=status.HTTP_401_UNAUTHORIZED
             )
 
-        # Create refresh token for the user
+        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
 
-        # Return JWT tokens
+        # Return tokens
         return Response(
             {
-                # Login success message
                 "message": "Login successful",
-                # Access token for API requests
                 "access": str(refresh.access_token),
-                # Refresh token for getting a new access token
                 "refresh": str(refresh),
             },
-            status=status.HTTP_200_OK,
+            status=status.HTTP_200_OK
+        )
+
+
+# ================= ADMIN LOGIN =================
+
+# API for administrator login
+class AdminLoginView(APIView):
+
+    # POST - login administrator
+    def post(self, request):
+
+        # Get username and password
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        # Verify credentials
+        user = authenticate(
+            username=username,
+            password=password
+        )
+
+        # Reject invalid credentials
+        if user is None:
+            return Response(
+                {"message": "Invalid username or password."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Allow only staff users
+        if not user.is_staff:
+            return Response(
+                {"message": "Admin access denied."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+
+        # Return admin tokens
+        return Response(
+            {
+                "message": "Admin login successful.",
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            },
+            status=status.HTTP_200_OK
         )

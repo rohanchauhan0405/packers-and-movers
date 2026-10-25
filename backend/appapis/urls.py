@@ -8,11 +8,15 @@ from .views import (
     ContactView,
     RegisterView,
     LoginView,
+    AdminLoginView,
 )
 
 
 # URL patterns for our API
 urlpatterns = [
+
+    path("admin-login/", AdminLoginView.as_view()),
+    
     # URL for getting all services
     path("services/", ServicesView.as_view()),
 
@@ -21,6 +25,9 @@ urlpatterns = [
 
     # URL for creating a booking/request
     path("booking/", SiteUserView.as_view()),
+
+      # URL for updating a booking/request
+    path("booking/<int:id>/", SiteUserView.as_view()),
 
     # URL for sending a contact message
     path("contact/", ContactView.as_view()),
